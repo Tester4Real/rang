@@ -23,28 +23,38 @@
       --radius-md:14px;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body{min-height:100%}
     body{
       margin:0;
       font-family:"Space Grotesk","Segoe UI",Tahoma,sans-serif;
       color:var(--ink);
       line-height:1.45;
-      background:
-        radial-gradient(1200px 550px at 10% -15%, rgba(66,214,255,.16), transparent 60%),
-        radial-gradient(900px 500px at 90% 10%, rgba(16,185,129,.11), transparent 58%),
-        linear-gradient(145deg, #04060f 0%, #060b18 46%, #070d1c 100%);
+      background:#060b18;
+      position:relative;
+      z-index:0;
       overflow-x:hidden;
+    }
+    header, .wrapper{
+      position:relative;
+      z-index:1;
     }
     body::before{
       content:"";
       position:fixed;
-      inset:-20% -10% auto auto;
-      width:420px;
-      height:420px;
+      inset:0;
       pointer-events:none;
-      filter:blur(44px);
-      opacity:.35;
-      background:radial-gradient(circle at center, rgba(66,214,255,.45), transparent 68%);
+      z-index:-2;
+      background:
+        radial-gradient(1200px 560px at 10% -16%, rgba(66,214,255,.16), transparent 62%),
+        linear-gradient(145deg, #04060f 0%, #060b18 46%, #070d1c 100%);
+    }
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:-1;
+      background:radial-gradient(920px 520px at 90% 10%, rgba(16,185,129,.1), transparent 60%);
     }
     header{
       max-width:1180px;
@@ -321,7 +331,6 @@
     </div>
 
     <div class="btns">
-      <button id="compute" class="ok">Calculer le score et le rang</button>
       <button id="reset" class="ghost">Réinitialiser</button>
       <button id="prefill" title="Exemple rapide">Pré-remplir un exemple</button>
     </div>
@@ -534,7 +543,6 @@ if (RANK_DATA.length) {
     makeUI();
     calcAll();
 
-    document.getElementById('compute').addEventListener('click', calcAll);
     document.getElementById('reset').addEventListener('click', resetAll);
     document.getElementById('prefill').addEventListener('click', prefill);
     document.getElementById('bonus').addEventListener('change', calcAll);
