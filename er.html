@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculateur score concours MP2</title>
+  <style>
+    :root{
+      --bg: #0f172a;
+      --panel:#111827;
+      --muted:#334155;
+      --soft:#1f2937;
+      --ink:#e5e7eb;
+      --accent:#22d3ee;
+      --accent-2:#a78bfa;
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: linear-gradient(120deg, #0b1220, #0f172a 40%, #0b1220 100%);
+      color:var(--ink);
+      line-height:1.45;
+    }
+    header{
+      max-width:1100px; margin:24px auto 8px; padding:0 16px;
+    }
+    h1{
+      font-weight:800; letter-spacing:.2px;
+      margin:.2rem 0 0.6rem;
+      font-size: clamp(1.4rem, 1.2rem + 1.5vw, 2.2rem)
+    }
+    .sub{color:#9ca3af}
+
+    .wrapper{max-width:1100px; margin:0 auto 80px; padding:16px}
+    .grid{display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));}
+
+    .card{
+      background: radial-gradient(120% 120% at 0% 0%, rgba(167,139,250,.05), transparent 60%),
+                  linear-gradient(180deg, rgba(31,41,55,.6), rgba(17,24,39,.7));
+      border:1px solid rgba(148,163,184,.18);
+      border-radius:var(--radius);
+      padding:18px 16px 14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .card h2{margin:0 0 8px; font-size:1.05rem; font-weight:700}
+    .coeff{
+      position:absolute; top:14px; right:14px;
+      background:rgba(2,132,199,.15);
+      color:#7dd3fc;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:.8rem;
+      border:1px solid rgba(125,211,252,.3)
+    }
+
+    .row{display:grid; grid-template-columns:1fr; gap:8px; margin:8px 0}
+    .row label{font-size:.8rem; color:#cbd5e1}
+    input[type="number"]{
+      width:100%; background:var(--panel); border:1px solid rgba(148,163,184,.25);
+      color:var(--ink); border-radius:12px; padding:10px 12px; outline:none; transition:.2s;
+    }
+    input[type="number"]:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(34,211,238,.15)
+    }
+
+    .note{font-size:.78rem; color:#9ca3af; margin-top:6px}
+    .avg{margin-top:10px; font-weight:700}
+
+    .kpi{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:16px; margin:16px 0 8px;
+    }
+    .tile{
+      background:linear-gradient(180deg, rgba(2,132,199,.12), rgba(2,132,199,0));
+      border:1px solid rgba(125,211,252,.35);
+      padding:16px;
+      border-radius:var(--radius)
+    }
+    .tile h3{margin:0; font-size:.95rem; font-weight:700; color:#a5f3fc}
+    .big{font-size:2rem; font-weight:800; letter-spacing:.5px; margin-top:8px}
+
+    .footer{
+      max-width:1100px; margin:14px auto 36px; padding:0 16px;
+      color:#9ca3af; font-size:.86rem
+    }
+    .btns{
+      display:flex; gap:10px; margin-top:8px; flex-wrap:wrap
+    }
+    button{
+      cursor:pointer; border:1px solid rgba(148,163,184,.28);
+      background:var(--soft); color:var(--ink);
+      padding:10px 14px; border-radius:12px;
+      font-weight:600; transition:.2s;
+    }
+    button:hover{transform:translateY(-1px); border-color: var(--accent);}
+    .ghost{background:transparent}
+    .ok{border-color: rgba(34,197,94,.45);}
+
+    .inline-help{font-size:.78rem; color:#a5b4fc}
+
+    .options{
+      margin-top:8px;
+      font-size:.86rem;
+      color:#cbd5e1;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .options input[type="checkbox"]{
+      width:auto;
+    }
+
+    .warning{
+      font-size:.78rem;
+      color:#facc15;
+      margin-top:6px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Calculateur de score • Concours MP2</h1>
+    <div class="sub">
+      Saisis tes notes sur 20 pour chaque matière. Le score est la somme
+      <strong>note × coefficient</strong> (total coeff = 43),
+      puis on ajoute éventuellement une <strong>bonification de +15 points</strong>.
+      Le rang est estimé à partir des données chargées depuis <code>rangs2025.js</code>.
+    </div>
+  </header>
+
+  <div class="wrapper">
+
+    <section class="kpi" id="kpis">
+      <div class="tile"><h3>Score brut (sans bonus)</h3><div class="big" id="score-brut">0.00</div></div>
+      <div class="tile"><h3>Bonus appliqué</h3><div class="big" id="bonus-points">+15</div></div>
+      <div class="tile"><h3>Score final</h3><div class="big" id="score-final">0.00</div></div>
+      <div class="tile"><h3>Rang estimé</h3><div class="big" id="rank-display">—</div></div>
+    </section>
+
+    <div class="options">
+      <input type="checkbox" id="bonus" checked />
+      <label for="bonus">Ajouter la bonification de +15 points</label>
+    </div>
+
+    <div class="btns">
+      <button id="compute" class="ok">Calculer le score et le rang</button>
+      <button id="reset" class="ghost">Réinitialiser</button>
+      <button id="prefill" title="Exemple rapide">Pré-remplir un exemple</button>
+    </div>
+
+    <div class="grid" id="subjects"></div>
+
+    <div class="warning">
+      Les données rang/score sont définies dans <code>rangs2025.js</code> (variable globale <code>window.RANK_DATA</code>).
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Astuce : tu peux entrer des décimales (ex : 13.5). Les valeurs sont bornées entre 0 et 20.  
+    Matières : Mathématiques I (10), Physique (10), Chimie (4), Sciences et Techniques de l’Ingénieur (4),
+    Informatique (3), Français (3), Anglais (3), Mathématiques II (6).
+  </div>
+
+  <!-- Carte d'une matière -->
+  <template id="card-template">
+    <div class="card">
+      <div class="coeff">Coeff <span class="cVal"></span></div>
+      <h2 class="title"></h2>
+      <div class="row">
+        <label>Note /20
+          <input type="number" step="0.01" min="0" max="20" class="inp note" placeholder="0–20" />
+        </label>
+      </div>
+      <div class="inline-help"></div>
+      <div class="avg">Contribution (score partiel) : <span class="avgVal">0.00</span></div>
+      <div class="note"></div>
+    </div>
+  </template>
+
+  <!-- 1) Script avec les données (DOIT être avant le script principal) -->
+  <script src="rangs2025.js"></script>
+
+  <!-- 2) Script principal -->
+  <script>
+    // ----- Config matières concours MP2 -----
+    const TOTAL_COEFF = 43;
+    const SUBJECTS = [
+      { key: 'math1',  name: 'Mathématiques I',                        coeff: 10 },
+      { key: 'phys',   name: 'Physique',                               coeff: 10 },
+      { key: 'chimie', name: 'Chimie',                                 coeff: 4  },
+      { key: 'sti',    name: "Sciences et Techniques de l'Ingénieur",  coeff: 4  },
+      { key: 'info',   name: 'Informatique',                           coeff: 3  },
+      { key: 'fr',     name: 'Français',                               coeff: 3  },
+      { key: 'ang',    name: 'Anglais',                                coeff: 3  },
+      { key: 'math2',  name: 'Mathématiques II',                       coeff: 6  }
+    ];
+
+    const clamp20 = v => (isNaN(v) ? null : Math.max(0, Math.min(20, v)));
+    const fmt = (n) => (n == null || isNaN(n)) ? '0.00' : n.toFixed(2);
+
+// RANG_DATA vient de rangs2025.js
+let RANK_DATA = Array.isArray(window.RANK_DATA) ? [...window.RANK_DATA] : [];
+
+// Convertir les scores string avec virgule -> nombre JS
+RANK_DATA = RANK_DATA.map(item => ({
+  rank: item.rank,
+  score: parseFloat(item.score.replace(",", "."))
+}));
+
+// Trier par score décroissant
+if (RANK_DATA.length) {
+  RANK_DATA.sort((a,b) => b.score - a.score);
+}
+    // ----- Construction UI -----
+    function buildCard(container, spec){
+      const tpl = document.getElementById('card-template');
+      const node = tpl.content.firstElementChild.cloneNode(true);
+      node.dataset.key = spec.key;
+      node.querySelector('.title').textContent = spec.name;
+      node.querySelector('.cVal').textContent = spec.coeff;
+      node.querySelector('.inline-help').textContent = `Score partiel = note × ${spec.coeff}`;
+
+      const input = node.querySelector('.note');
+      input.addEventListener('input', () => {
+        calcOne(node, spec);
+        calcAll();
+      });
+
+      container.appendChild(node);
+      return node;
+    }
+
+    function makeUI() {
+      const host = document.getElementById('subjects');
+      SUBJECTS.forEach(s => buildCard(host, s));
+    }
+
+    // ----- Calculs matières -----
+    function calcOne(card, spec) {
+      const input = card.querySelector('.note');
+      const raw = parseFloat((input.value || '').replace(',', '.'));
+      const val = clamp20(raw);
+      if (val != null && !isNaN(val)) input.value = val;
+      const contribution = (val == null ? 0 : val * spec.coeff);
+      card.querySelector('.avgVal').textContent = fmt(contribution);
+      return contribution;
+    }
+
+    // ----- Estimation du rang -----
+    function estimateRank(score, data){
+      if (!data.length) return null;
+
+      // Rang exact (tolérance flottante)
+      for (const d of data){
+        if (Math.abs(d.score - score) < 0.001){
+          return { exactRank: d.rank };
+        }
+      }
+
+      // Au-dessus du meilleur score
+      if (score > data[0].score){
+        return { minRank: 1, maxRank: data[0].rank };
+      }
+
+      // Entre deux scores connus
+      for (let i=0; i<data.length-1; i++){
+        const s1 = data[i].score;
+        const s2 = data[i+1].score;
+        if (score <= s1 && score >= s2){
+          const r1 = data[i].rank;
+          const r2 = data[i+1].rank;
+          return {
+            minRank: Math.min(r1, r2),
+            maxRank: Math.max(r1, r2)
+          };
+        }
+      }
+
+      // En dessous du plus petit score connu
+      const last = data[data.length-1];
+      return { minRank: last.rank, maxRank: last.rank + 50 };
+    }
+
+    // ----- Calcul global score + rang -----
+    function calcAll(){
+      let rawScore = 0;
+
+      SUBJECTS.forEach(spec => {
+        const card = document.querySelector('.card[data-key="'+spec.key+'"]');
+        if (!card) return;
+        rawScore += calcOne(card, spec);
+      });
+
+      const bonusChecked = document.getElementById('bonus').checked;
+      const bonus = bonusChecked ? 15 : 0;
+      const finalScore = rawScore + bonus;
+
+      document.getElementById('score-brut').textContent = fmt(rawScore);
+      document.getElementById('bonus-points').textContent = bonusChecked ? '+15' : '+0';
+      document.getElementById('score-final').textContent = fmt(finalScore);
+
+      const rankEl = document.getElementById('rank-display');
+      const rankInfo = estimateRank(finalScore, RANK_DATA);
+
+      if (!RANK_DATA.length){
+        rankEl.textContent = 'Aucune donnée';
+        rankEl.style.color = 'var(--warn)';
+      } else if (!rankInfo){
+        rankEl.textContent = 'N/A';
+        rankEl.style.color = 'var(--warn)';
+      } else if (rankInfo.exactRank != null){
+        rankEl.textContent = '≈ ' + rankInfo.exactRank;
+        rankEl.style.color = 'var(--good)';
+      } else {
+        rankEl.textContent = `entre ${rankInfo.minRank} et ${rankInfo.maxRank}`;
+        rankEl.style.color = 'var(--good)';
+      }
+    }
+
+    function resetAll(){
+      document.querySelectorAll('input.note').forEach(i => i.value = '');
+      document.querySelectorAll('.avgVal').forEach(s => s.textContent = '0.00');
+      document.getElementById('score-brut').textContent = '0.00';
+      document.getElementById('score-final').textContent = '0.00';
+      document.getElementById('rank-display').textContent = '—';
+      document.getElementById('rank-display').style.color = '#e5e7eb';
+    }
+
+    function prefill(){
+      const example = {
+        math1: 14,
+        phys:  13,
+        chimie:12,
+        sti:   11.5,
+        info:  15,
+        fr:    13,
+        ang:   14,
+        math2: 13.5
+      };
+      for (const [key,val] of Object.entries(example)){
+        const card = document.querySelector('.card[data-key="'+key+'"]');
+        if (!card) continue;
+        const input = card.querySelector('.note');
+        input.value = val;
+      }
+      calcAll();
+    }
+
+    // ----- Init -----
+    makeUI();
+    calcAll();
+
+    document.getElementById('compute').addEventListener('click', calcAll);
+    document.getElementById('reset').addEventListener('click', resetAll);
+    document.getElementById('prefill').addEventListener('click', prefill);
+    document.getElementById('bonus').addEventListener('change', calcAll);
+  </script>
+
+  <script>
+    window.va = window.va || function(){ (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
